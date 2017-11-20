@@ -17,7 +17,7 @@ UPDATE `quest_template` SET `QuestFlags`=0 WHERE `entry`=7046;
 
 -- add missing npc text
 DELETE FROM `npc_text` WHERE `ID`=6374;
-INSERT INTO `npc_text` (`ID`, `text0_0`, `prob1`) VALUES (6374, 'How has this come to be, $n? Do you think that an item such as the Scepter of Celebras is trivial?$B$BI can help you this time, but do not be careless with this valuable item again...', 1);
+INSERT INTO `npc_text` (`ID`, `BroadcastTextID0`, `Probability0`) VALUES (6374, 8927, 1);
 
 -- Add gossip and spawn for 13716: Celebras the Redeemed
 UPDATE `creature_template` SET `gossip_menu_id`=5349, `npcflag`=3 WHERE `entry`=13716;
