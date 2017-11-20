@@ -246,7 +246,7 @@ struct celebrasSpiritAI : public npc_escortAI
                         // m_creature->CastSpell(m_creature, SPELL_CHANNEL, true);
                         DoScriptText(EMOTE_CHANNEL, m_creature, 0, CHAT_TYPE_TEXT_EMOTE);
                         SetEscortPaused(true);
-                        Event_Timer = 30000;
+                        Event_Timer = m_bBookRead ? 1000 : 30000;
                         break;
                     case 5:
                         if (!m_bBookRead)
