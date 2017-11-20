@@ -73,7 +73,6 @@ struct celebras_the_cursedAI : public ScriptedAI
     {
         if (m_pInstance)
             m_pInstance->SetData(TYPE_CELEBRAS, DONE);
-        //m_creature->SummonCreature(NPC_CELEBRAS_REDEEMED, m_creature->GetPositionX(), m_creature->GetPositionY(), m_creature->GetPositionZ() + 1, 0, TEMPSUMMON_TIMED_DESPAWN, 600000);
     }
 
     void UpdateAI(const uint32 diff)
