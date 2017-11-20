@@ -1239,7 +1239,7 @@ void World::SetInitialWorldSettings()
     sSpellMgr.LoadSpellThreats();
 
     sLog.outString("Loading NPC Texts...");
-    sObjectMgr.LoadGossipText();
+    sObjectMgr.LoadNPCText();
 
     sLog.outString("Loading Item Random Enchantments Table...");
     LoadRandomEnchantmentsTable();
@@ -1417,7 +1417,7 @@ void World::SetInitialWorldSettings()
     sObjectMgr.LoadFishingBaseSkillLevel();
 
     sLog.outString("Loading Npc Text Id...");
-    sObjectMgr.LoadNpcGossips();                            // must be after load Creature and LoadGossipText
+    sObjectMgr.LoadNpcGossips();                            // must be after load Creature and LoadNPCText
 
     sLog.outString("Loading Gossip scripts...");
     sScriptMgr.LoadGossipScripts();                         // must be before gossip menu options
@@ -1450,7 +1450,6 @@ void World::SetInitialWorldSettings()
     sObjectMgr.LoadGameObjectLocales();                     // must be after GameobjectInfo loading
     sObjectMgr.LoadItemLocales();                           // must be after ItemPrototypes loading
     sObjectMgr.LoadQuestLocales();                          // must be after QuestTemplates loading
-    sObjectMgr.LoadGossipTextLocales();                     // must be after LoadGossipText
     sObjectMgr.LoadPageTextLocales();                       // must be after PageText loading
     sObjectMgr.LoadGossipMenuItemsLocales();                // must be after gossip menu items loading
     sObjectMgr.LoadPointOfInterestLocales();                // must be after POI loading
