@@ -123,34 +123,23 @@ struct celebrasSpiritAI : public npc_escortAI
     {
         m_pInstance = (ScriptedInstance*)pCreature->GetInstanceData();
         Event_Timer = 0;
-        Point = 0;
-        underEvent = false;
         SetEscortPaused(true);
-        isFirstWaypoint = false;
-        isWaitingTomeRead = false;
-        isLinked = false;
         auraGUID = 0;
-        isQuestCompleted = false;
         Reset();
     }
 
     ScriptedInstance* m_pInstance;
+    uint8 m_uiPhase;
     uint32 Event_Timer;
-    uint32 Point;
     uint64 auraGUID;
-    bool underEvent;
-    bool isFirstWaypoint;
-    bool isWaitingTomeRead;
-    bool isLinked;
-    bool isQuestCompleted;
+    bool m_bBookRead;
 
     void Reset()
     {
-    }
-
-    void Aggro(Unit* pWho)
-    {
-        SetEscortPaused(true);
+        m_uiPhase = 0;
+        Event_Timer = 0;
+        auraGUID = 0;
+        m_bBookRead = false;
     }
 
     void WaypointReached(uint32 i)
@@ -158,20 +147,20 @@ struct celebrasSpiritAI : public npc_escortAI
         std::list<GameObject*> scepterList;
         switch (i)
         {
-            case 1:
+            case 0:
                 m_creature->SetOrientation(5.342044f);
+                m_creature->SetHomePosition(m_creature->GetPositionX(), m_creature->GetPositionY(), m_creature->GetPositionZ(), m_creature->GetOrientation());
+                break;
+
+            case 1:
                 DoScriptText(SAY_WP_1, m_creature);
                 SetRun(false);
-                Event_Timer = 8000;
-                SetEscortPaused(true);
-                Point = i;
                 break;
 
             case 3:
                 if (Player* pPlayer = GetPlayerForEscort())
                     DoScriptText(SAY_WP_3, m_creature, pPlayer);
                 Event_Timer = 4000;
-                Point = i;
                 break;
 
             case 4:
@@ -189,9 +178,6 @@ struct celebrasSpiritAI : public npc_escortAI
                 DoScriptText(SAY_WP_5, m_creature);
                 if (GameObject* obj = m_creature->SummonGameObject(GO_CELEBRAS_BLUE_AURA, 652.463013f, 74.085098f, -85.335297f, 3.054616f, 0, 0, 0, 0, -1, false))
                     auraGUID = obj->GetGUID();
-                Event_Timer = 4000;
-                SetEscortPaused(true);
-                Point = i;
                 break;
 
             case 6:
@@ -202,126 +188,99 @@ struct celebrasSpiritAI : public npc_escortAI
                     (*it)->UseDoorOrButton(0, false);
                 scepterList.clear();
 
-                Point = i;
                 break;
             case 9:
-                SetEscortPaused(true);
                 if (GameObject* pAura = m_creature->GetMap()->GetGameObject(auraGUID))
                     pAura->Delete();
-                Event_Timer = 3000;
-                Point = i;
                 break;
             case 13:
-                SetEscortPaused(true);
+                Stop();
                 Event_Timer = 3000;
-                Point = i;
-                break;
-            default:
                 break;
         }
     }
 
     void QuestAccepted(Player* pPlayer, Quest const* pQuest)
     {
-        if (!underEvent)
-        {
-            isQuestCompleted = false;
-            DoScriptText(SAY_ACCEPT, m_creature);
-            underEvent = true;
-            Start(true, pPlayer->GetGUID(), pQuest);
-        }
+        Reset();
+        DoScriptText(SAY_ACCEPT, m_creature);
+        Start(true, pPlayer->GetGUID(), pQuest);
     }
 
     void JustStartedEscort() override
     {
         SetEscortPaused(true);
         Event_Timer = 5000;
-        isFirstWaypoint = true;
+        m_uiPhase = 1;
     }
 
     void BookRead()
     {
-        SetEscortPaused(false);
+        m_bBookRead = true;
+        if (Event_Timer > 1000)
+            Event_Timer = 1000;
     }
 
     void UpdateEscortAI(const uint32 uiDiff)
     {
-        if (Event_Timer <= uiDiff)
+        if (Event_Timer && !m_creature->getVictim())
         {
-            if (isFirstWaypoint)
+            if (Event_Timer <= uiDiff)
             {
-                isFirstWaypoint = false;
-                SetEscortPaused(false);
-            }
+                Event_Timer = 0;
 
-            switch (Point)
-            {
-                case 1:
-                    SetEscortPaused(false);
-                    SetRun(false);
-                    break;
-                case 3:
-                    if (!isWaitingTomeRead)
-                    {
-                        m_creature->SetOrientation(3.009412f);
-                        isWaitingTomeRead = true;
+                switch (m_uiPhase)
+                {
+                    case 1:
+                        SetEscortPaused(false);
+                        break;
+                    case 2:
                         DoScriptText(SAY_PRE_READ, m_creature);
+                        Event_Timer = 1000;
+                        break;
+                    case 3:
+                        m_creature->SummonGameObject(GO_TOME, 652.175f, 74.069f, -85.334327f, 5.6635f, 0, 0, 0, 0, -1, false);
+                        Event_Timer = 1000;
+                        break;
+                    case 4:
                         // m_creature->CastSpell(m_creature, SPELL_CHANNEL, true);
                         DoScriptText(EMOTE_CHANNEL, m_creature, 0, CHAT_TYPE_TEXT_EMOTE);
-                        m_creature->SummonGameObject(GO_TOME, 652.175f, 74.069f, -85.334327f, 5.6635f, 0, 0, 0, 0, -1, false);
-                        isLinked = true;
-                        Event_Timer = 4000;
                         SetEscortPaused(true);
-                        m_creature->SetOrientation(3.009412f);
-                    }
-                    else if (isLinked)
-                    {
+                        Event_Timer = 30000;
+                        break;
+                    case 5:
+                        if (!m_bBookRead)
+                        {
+                            // timed out waiting for book to be read
+                            ResetEscort();
+                            return;
+                        }
+
                         DoScriptText(SAY_POST_READ, m_creature);
-                        isLinked = false;
-                    }
-                    break;
-                case 5:
-                    SetEscortPaused(false);
-                    break;
-                case 9:
-                    SetEscortPaused(false);
-                    break;
-                case 13:
-                    if (!isQuestCompleted)
-                    {
-                        isQuestCompleted = true;
+                        Event_Timer = 1000;
+                        break;
+                    case 6:
+                        SetEscortPaused(false);
+                        break;
+                    case 7:
                         m_creature->SetFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_QUESTGIVER | UNIT_NPC_FLAG_GOSSIP);
 
                         if (Player* player = GetPlayerForEscort())
                         {
                             if (player->GetQuestStatus(QUEST_SCEPTER) == QUEST_STATUS_INCOMPLETE)
-                                player->AreaExploredOrEventHappens(QUEST_SCEPTER);
-
-
-                            if (m_creature->isQuestGiver())
                             {
+                                player->AreaExploredOrEventHappens(QUEST_SCEPTER);
                                 player->PrepareGossipMenu(m_creature, m_creature->GetCreatureInfo()->GossipMenuId);
                                 player->SendPreparedGossip(m_creature);
                             }
                         }
-
-                        Event_Timer = 0;
-                        Point = 0;
-                        underEvent = false;
-                        SetEscortPaused(true);
-                        isFirstWaypoint = false;
-                        isWaitingTomeRead = false;
-                        isLinked = false;
-                        auraGUID = 0;
-                        Stop();
-                    }
-                    break;
-                default:
-                    break;
+                        break;
+                }
+                m_uiPhase++;
             }
+            else
+                Event_Timer -= uiDiff;
         }
-        else
-            Event_Timer -= uiDiff;
 
         if (!m_creature->SelectHostileTarget() || !m_creature->getVictim())
             return;

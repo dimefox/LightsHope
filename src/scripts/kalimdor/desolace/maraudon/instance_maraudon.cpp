@@ -94,8 +94,8 @@ struct instance_maraudon : public ScriptedInstance
     {
         switch (uiData)
         {
-        case NPC_CELEBRAS_REDEEMED:
-            return cGuid;
+            case NPC_CELEBRAS_REDEEMED:
+                return cGuid;
         }
 
         return 0;
