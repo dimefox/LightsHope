@@ -5,8 +5,10 @@
 #include "scriptPCH.h"
 #include "maraudon.h"
 
+/*
 #define QUEST_CELEBRAS_CEPTER 7046
 #define CREATURE_CELEBRAS 13716
+
 #define GO_PEDESTAL 178560
 #define GO_BLUE_AURA 178964
 #define GO_BOOK 178965
@@ -14,31 +16,123 @@
 #define SPELL_FRENEZIED_REGEN 22896
 #define SPELL_HEARTSTONE 8690
 #define SPELL_END_EVENT 21914
+*/
 
-instance_maraudon::instance_maraudon(Map *pMap) : ScriptedInstance(pMap), cGuid(static_cast<uint64>(0)), pGuid(static_cast<uint64>(0)), bGuid(static_cast<uint64>(0)), aGuid(static_cast<uint64>(0))
+struct instance_maraudon : public ScriptedInstance
 {
-}
+    instance_maraudon(Map *pMap) : ScriptedInstance(pMap)//, cGuid(static_cast<uint64>(0)), pGuid(static_cast<uint64>(0)), bGuid(static_cast<uint64>(0)), aGuid(static_cast<uint64>(0))
+    {
+        cGuid = 0;
+    }
 
-void instance_maraudon::OnCreatureCreate(Creature *pCreature)
-{
-    if (pCreature->GetEntry() == CREATURE_CELEBRAS)
-        cGuid = pCreature->GetObjectGuid();
-}
+    uint32 m_auiEncounter[MARAUDON_MAX_ENCOUNTER];
+    std::string strInstData;
 
-void instance_maraudon::OnGameObjectCreate(GameObject *pGo)
-{
-    if (pGo->GetEntry() == GO_PEDESTAL)
-        pGuid = pGo->GetObjectGuid();
-    if (pGo->GetEntry() == GO_BOOK)
-        bGuid = pGo->GetObjectGuid();
-    if (pGo->GetEntry() == GO_BLUE_AURA)
-        aGuid = pGo->GetObjectGuid();
-}
+    uint64 cGuid;
+
+    void Initialize()
+    {
+        memset(&m_auiEncounter, 0, sizeof(m_auiEncounter));
+
+        cGuid = 0;
+    }
+
+    void OnCreatureCreate(Creature *pCreature)
+    {
+        if (pCreature->GetEntry() == NPC_CELEBRAS_REDEEMED)
+        {
+            cGuid = pCreature->GetObjectGuid();
+
+            if (m_auiEncounter[0] != DONE)
+                pCreature->SetVisibility(VISIBILITY_OFF);
+        }
+    }
+
+    const char* Save()
+    {
+        return strInstData.c_str();
+    }
+
+    void Load(const char* chrIn)
+    {
+        if (!chrIn)
+            return;
+        std::istringstream loadStream(chrIn);
+        for (uint8 i = 0; i < MARAUDON_MAX_ENCOUNTER; ++i)
+        {
+            loadStream >> m_auiEncounter[i];
+            if (m_auiEncounter[i] == IN_PROGRESS)
+                m_auiEncounter[i] = NOT_STARTED;
+        }
+    }
+
+    uint32 GetData(uint32 uiType)
+    {
+        if (uiType == TYPE_CELEBRAS)
+            return m_auiEncounter[0];
+        return 0;
+    }
+
+    void SetData(uint32 uiType, uint32 uiData)
+    {
+        if (uiType == TYPE_CELEBRAS)
+        {
+            if (uiData == DONE)
+            {
+                if (Creature* pCreature = instance->GetCreature(GetData64(NPC_CELEBRAS_REDEEMED)))
+                {
+                    pCreature->SetVisibility(VISIBILITY_ON);
+                }
+            }
+
+            m_auiEncounter[0] = uiData;
+        }
+
+        if (uiData == DONE)
+        {
+            OUT_SAVE_INST_DATA;
+
+            std::ostringstream saveStream;
+            for (int i = 0; i < MARAUDON_MAX_ENCOUNTER; ++i)
+                saveStream << m_auiEncounter[i] << " ";
+
+            strInstData = saveStream.str();
+
+            SaveToDB();
+            OUT_SAVE_INST_DATA_COMPLETE;
+        }
+    }
+
+    uint64 GetData64(uint32 uiData)
+    {
+        switch (uiData)
+        {
+        case NPC_CELEBRAS_REDEEMED:
+            return cGuid;
+        }
+
+        return 0;
+    }
+
+    /*
+    void instance_maraudon::OnGameObjectCreate(GameObject *pGo)
+    {
+        if (pGo->GetEntry() == GO_PEDESTAL)
+            pGuid = pGo->GetObjectGuid();
+        if (pGo->GetEntry() == GO_BOOK)
+            bGuid = pGo->GetObjectGuid();
+        if (pGo->GetEntry() == GO_BLUE_AURA)
+            aGuid = pGo->GetObjectGuid();
+    }
+    */
+};
 
 InstanceData* GetInstanceData_instance_maraudon(Map* pMap)
 {
     return new instance_maraudon(pMap);
 }
+
+/*
 
 struct npc_celebrasAI : public ScriptedAI
 {
@@ -94,7 +188,7 @@ struct npc_celebrasAI : public ScriptedAI
         m_creature->RemoveFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
     }
 
-    void MovementInform(uint32 /*uiMotionType*/, uint32 uiPointId) override
+    void MovementInform(uint32 /*uiMotionType* /, uint32 uiPointId) override
     {
         switch (uiPointId)
         {
@@ -274,7 +368,7 @@ bool QuestAccept_npc_celebras(Player *pPlayer, Creature *pCreature, const Quest 
     return true;
 }
 
-bool GOUse_go_celebras_book(Player* /*pPlayer*/, GameObject* pGo)
+bool GOUse_go_celebras_book(Player* /*pPlayer* /, GameObject* pGo)
 {
     if (instance_maraudon* pInstance = dynamic_cast<instance_maraudon*>((ScriptedInstance*)pGo->GetInstanceData()))
         if (Creature *pCreature = pGo->GetMap()->GetCreature(pInstance->GetCelebrasGuid()))
@@ -282,6 +376,8 @@ bool GOUse_go_celebras_book(Player* /*pPlayer*/, GameObject* pGo)
                 pCelebrasAI->ReadBook();
     return false;
 }
+
+*/
 
 void AddSC_instance_maraudon()
 {
@@ -292,6 +388,7 @@ void AddSC_instance_maraudon()
     pNewScript->GetInstanceData = &GetInstanceData_instance_maraudon;
     pNewScript->RegisterSelf();
 
+    /*
     pNewScript = new Script;
     pNewScript->Name = "npc_celebras";
     pNewScript->GetAI = &GetAI_npc_celebras;
@@ -302,4 +399,5 @@ void AddSC_instance_maraudon()
     pNewScript->Name = "go_celebras_book";
     pNewScript->pGOHello = &GOUse_go_celebras_book;
     pNewScript->RegisterSelf();
+    */
 }

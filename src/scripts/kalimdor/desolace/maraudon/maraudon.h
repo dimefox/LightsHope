@@ -6,6 +6,16 @@
 #define MARAUDON_H
 #include "scriptPCH.h"
 
+enum
+{
+    MARAUDON_MAX_ENCOUNTER = 1,
+
+    TYPE_CELEBRAS = 1,
+
+    NPC_CELEBRAS_REDEEMED = 13716
+};
+
+/*
 class instance_maraudon : public ScriptedInstance
 {
     public:
@@ -22,5 +32,6 @@ class instance_maraudon : public ScriptedInstance
     ObjectGuid bGuid;
     ObjectGuid aGuid;
 };
+*/
 
 #endif

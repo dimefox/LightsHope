@@ -22,15 +22,18 @@ SDCategory: Maraudon
 EndScriptData */
 
 #include "scriptPCH.h"
+#include "maraudon.h"
 
 #define SPELL_WRATH                 21807
 #define SPELL_ENTANGLINGROOTS       12747
 #define SPELL_CORRUPT_FORCES        21968
 
-#define GO_CELEBRAS_BLUE_AURA       178964
-
 enum
 {
+    GO_CREATOR = 178560,
+    GO_CELEBRAS_BLUE_AURA = 178964,
+    GO_TOME = 178965,
+
     SAY_WP_1 = 8953,
     SAY_WP_3 = 8954,
     SAY_WP_5 = 8949,
@@ -39,6 +42,7 @@ enum
     SAY_PRE_READ = 8950,
     SAY_POST_READ = 8948,
 
+    SPELL_CHANNEL = 21916,
     EMOTE_CHANNEL = 8951,
 
     QUEST_SCEPTER = 7046
@@ -48,8 +52,11 @@ struct celebras_the_cursedAI : public ScriptedAI
 {
     celebras_the_cursedAI(Creature* pCreature) : ScriptedAI(pCreature)
     {
+        m_pInstance = (ScriptedInstance*)pCreature->GetInstanceData();
         Reset();
     }
+
+    ScriptedInstance* m_pInstance;
 
     uint32 Wrath_Timer;
     uint32 EntanglingRoots_Timer;
@@ -64,7 +71,9 @@ struct celebras_the_cursedAI : public ScriptedAI
 
     void JustDied(Unit* Killer)
     {
-        m_creature->SummonCreature(13716, m_creature->GetPositionX(), m_creature->GetPositionY(), m_creature->GetPositionZ() + 1, 0, TEMPSUMMON_TIMED_DESPAWN, 600000);
+        if (m_pInstance)
+            m_pInstance->SetData(TYPE_CELEBRAS, DONE);
+        //m_creature->SummonCreature(NPC_CELEBRAS_REDEEMED, m_creature->GetPositionX(), m_creature->GetPositionY(), m_creature->GetPositionZ() + 1, 0, TEMPSUMMON_TIMED_DESPAWN, 600000);
     }
 
     void UpdateAI(const uint32 diff)
@@ -179,7 +188,7 @@ struct celebrasSpiritAI : public npc_escortAI
                     pGo->Refresh();
                 }
                 DoScriptText(SAY_WP_5, m_creature);
-                if (GameObject* obj = m_creature->SummonGameObject(178964, 652.463013f, 74.085098f, -85.335297f, 3.054616f, 0, 0, 0, 0, -1, false))
+                if (GameObject* obj = m_creature->SummonGameObject(GO_CELEBRAS_BLUE_AURA, 652.463013f, 74.085098f, -85.335297f, 3.054616f, 0, 0, 0, 0, -1, false))
                     auraGUID = obj->GetGUID();
                 Event_Timer = 4000;
                 SetEscortPaused(true);
@@ -189,7 +198,7 @@ struct celebrasSpiritAI : public npc_escortAI
             case 6:
                 DoScriptText(SAY_WP_6, m_creature);
 
-                GetGameObjectListWithEntryInGrid(scepterList, m_creature, 178560, 40.0f);
+                GetGameObjectListWithEntryInGrid(scepterList, m_creature, GO_CREATOR, 40.0f);
                 for (std::list<GameObject*>::iterator it = scepterList.begin(); it != scepterList.end(); ++it)
                     (*it)->UseDoorOrButton(0, false);
                 scepterList.clear();
@@ -258,9 +267,9 @@ struct celebrasSpiritAI : public npc_escortAI
                         m_creature->SetOrientation(3.009412f);
                         isWaitingTomeRead = true;
                         DoScriptText(SAY_PRE_READ, m_creature);
-                        //CastSpell Renew druid
+                        // m_creature->CastSpell(m_creature, SPELL_CHANNEL, true);
                         DoScriptText(EMOTE_CHANNEL, m_creature, 0, CHAT_TYPE_TEXT_EMOTE);
-                        m_creature->SummonGameObject(178965, 652.175f, 74.069f, -85.334327f, 5.6635f, 0, 0, 0, 0, -1, false);
+                        m_creature->SummonGameObject(GO_TOME, 652.175f, 74.069f, -85.334327f, 5.6635f, 0, 0, 0, 0, -1, false);
                         isLinked = true;
                         Event_Timer = 4000;
                         SetEscortPaused(true);
@@ -282,7 +291,7 @@ struct celebrasSpiritAI : public npc_escortAI
                     if (!isQuestCompleted)
                     {
                         isQuestCompleted = true;
-                        m_creature->SetFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_QUESTGIVER);
+                        m_creature->SetFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_QUESTGIVER | UNIT_NPC_FLAG_GOSSIP);
 
                         if (Player* player = GetPlayerForEscort())
                         {
@@ -292,8 +301,8 @@ struct celebrasSpiritAI : public npc_escortAI
 
                             if (m_creature->isQuestGiver())
                             {
-                                player->PrepareQuestMenu(m_creature->GetGUID());
-                                player->SEND_GOSSIP_MENU(player->GetGossipTextId(m_creature), m_creature->GetGUID());
+                                player->PrepareGossipMenu(m_creature, m_creature->GetCreatureInfo()->GossipMenuId);
+                                player->SendPreparedGossip(m_creature);
                             }
                         }
 
@@ -322,18 +331,6 @@ struct celebrasSpiritAI : public npc_escortAI
     }
 };
 
-bool GossipHello_spirit_celebras(Player* pPlayer, Creature* pCreature)
-{
-    ScriptedInstance* m_pInstance = (ScriptedInstance*)pCreature->GetInstanceData();
-
-    if (pCreature->isQuestGiver())
-    {
-        pPlayer->PrepareQuestMenu(pCreature->GetGUID());
-        pPlayer->SEND_GOSSIP_MENU(pPlayer->GetGossipTextId(pCreature), pCreature->GetGUID());
-    }
-    return true;
-}
-
 bool GOHello_go_book_celebras(Player* pPlayer, GameObject* pGo)
 {
     if (pPlayer->GetQuestStatus(QUEST_SCEPTER) == QUEST_STATUS_INCOMPLETE)
@@ -342,7 +339,7 @@ bool GOHello_go_book_celebras(Player* pPlayer, GameObject* pGo)
         pGo->Delete();
 
         std::list<Creature*> celebrasList;
-        GetCreatureListWithEntryInGrid(celebrasList, pPlayer, 13716, 40.0f);
+        GetCreatureListWithEntryInGrid(celebrasList, pPlayer, NPC_CELEBRAS_REDEEMED, 40.0f);
         for (std::list<Creature*>::iterator it = celebrasList.begin(); it != celebrasList.end(); ++it)
         {
             if (celebrasSpiritAI* pcelebrasSpirit = dynamic_cast<celebrasSpiritAI*>((*it)->AI()))
@@ -379,7 +376,6 @@ void AddSC_boss_celebras_the_cursed()
     newscript = new Script;
     newscript->Name = "celebras_spirit";
     newscript->GetAI = &GetAI_celebras_spirit;
-    newscript->pGossipHello =  &GossipHello_spirit_celebras;
     newscript->pQuestAcceptNPC = &QuestAccept_celebras_spirit;
     newscript->RegisterSelf();
 
