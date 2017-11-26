@@ -8,8 +8,9 @@ IF v=0 THEN
 INSERT INTO `migrations` VALUES ('20171124181306');
 -- Add your query below.
 
--- Disable Vaelan spawn
+-- Disable Vaelan spawn and NPC flags
 UPDATE `creature` SET `spawnFlags`=2 WHERE `guid`=42797;
+UPDATE `creature_template` SET `npcflag`=0 WHERE `entry`=10296;
 
 -- Move infiltrator from y=-413.32 to y=-399.5 and kneel
 UPDATE `creature` SET `position_x`=56.85, `position_y`=-399.5, `position_z`=64.35, `orientation`=3.14, `MovementType`=0 WHERE `guid`=42798;
@@ -34,7 +35,8 @@ REPLACE INTO `event_scripts` (`id`,`delay`,`command`,`datalong`,`datalong2`,`dat
 (16037, 4, 0, 0, 0, 5555, 'Scarshield Infiltrator - Say text 1'),
 (16037, 4, 1, 1, 0, 0, 'Scarshield Infiltrator - Say emote 1'),
 (16037, 10, 0, 0, 0, 5556, 'Scarshield Infiltrator - Say text 2'),
-(16037, 10, 1, 1, 0, 0, 'Scarshield Infiltrator - Say emote 2');
+(16037, 10, 1, 1, 0, 0, 'Scarshield Infiltrator - Say emote 2'),
+(16037, 10, 29, 3, 1, 0, 'Scarshield Infiltrator - Set gossip flags');
 
 -- End of migration.
 END IF;
