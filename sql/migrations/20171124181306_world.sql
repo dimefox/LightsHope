@@ -11,39 +11,30 @@ INSERT INTO `migrations` VALUES ('20171124181306');
 -- Disable Vaelan spawn
 UPDATE `creature` SET `spawnFlags`=2 WHERE `guid`=42797;
 
--- Move infiltrator from y=-413.32 to y=-399.5 and MovementType=2
-UPDATE `creature` SET `position_x`=56.85, `position_y`=-399.5, `position_z`=64.35, `orientation`=3.2, `MovementType`=2 WHERE `guid`=42798;
+-- Move infiltrator from y=-413.32 to y=-399.5 and kneel
+UPDATE `creature` SET `position_x`=56.85, `position_y`=-399.5, `position_z`=64.35, `orientation`=3.14, `MovementType`=0 WHERE `guid`=42798;
+REPLACE INTO `creature_addon` (`guid`,`patch`,`bytes1`) VALUES (42798, 0, 8);
 
--- Add a single waypoint script to change facing
-REPLACE INTO `creature_movement` (`id`,`point`,`position_x`,`position_y`,`position_z`, `script_id`) VALUES (42798, 1, 56.85, -399.5, 64.35, 42798);
-DELETE FROM `creature_movement_scripts` WHERE `id`=42798;
-REPLACE INTO `creature_movement_scripts` (`id`,`command`,`datalong`, `o`, `comments`) VALUES
-(42798, 35, 1, 6.1, 'Scarshield Infiltrator - Set Orientation'),
-(42798, 20, 0, 0,   'Scarshield Infiltrator - Stop Waypoint Movement');
-
--- Redo events
+-- Clean up old stuff
 DELETE from `creature_ai_scripts` WHERE `creature_id`=10299;
+DELETE FROM `creature_ai_texts` WHERE `entry` IN (-9, -10);
+DELETE FROM `event_scripts` WHERE `id`=16037;
 
--- Kneel, idle and set phase 1 on spawn
-REPLACE INTO `creature_ai_scripts` (`id`,`creature_id`,`event_type`,`event_inverse_phase_mask`,`event_chance`,
-  `event_param1`,`event_param2`,`action1_type`,`action1_param1`,`action2_type`,`action2_param1`,`action3_type`,`action3_param1`,`comment`) VALUES
-(1029901, 10299, 11, 0, 100, 0, 0, 22, 1, 47, 8, 48, 0, 'Scarshield Infiltrator - Kneel, idle and set phase 1 on spawn');
-
--- Stand, cast and set phase 2 on LOS
+-- Trigger event script on LOS
 REPLACE INTO `creature_ai_scripts` (`id`,`creature_id`,`event_type`,`event_inverse_phase_mask`,`event_chance`,
   `event_param1`,`event_param2`,`action1_type`,`action1_param1`,`action2_type`,`action2_param1`,`action2_param2`,`action3_type`,`action3_param1`,`comment`) VALUES
-(1029902, 10299, 10, 5, 100, 1, 15, 47, 0, 11, 16037, 6, 23, 1, 'Scarshield Infiltrator - Stand, cast Mind Probe and set phase 2 on LOS (Phase 1)');
+(1029901, 10299, 10, 0, 100, 1, 15, 50, 16037, 11, 16037, 6, 22, 1, 'Scarshield Infiltrator - Trigger Vaelan event on LOS'),
+(1029902, 10299, 1, 1, 100, 2000, 2000, 36, 10296, 0, 0, 0, 0, 0, 'Scarshield Infiltrator - Morph into Vaelan (Phase 1)');
 
--- Morph and enable waypoint
-REPLACE INTO `creature_ai_scripts` (`id`,`creature_id`,`event_type`,`event_inverse_phase_mask`,`event_chance`,
-  `event_param1`,`event_param2`,`action1_type`,`action1_param1`,`action2_type`,`action2_param1`,`comment`) VALUES
-(1029903, 10299, 1, 3, 100, 2000, 2000, 36, 10296, 48, 2, 'Scarshield Infiltrator - Morph into Vaelan and enable waypoint (Phase 2)');
-
--- Talking
-REPLACE INTO `creature_ai_scripts` (`id`,`creature_id`,`event_type`,`event_inverse_phase_mask`,`event_chance`,
-  `event_param1`,`event_param2`,`action1_type`,`action1_param1`,`action2_type`,`action2_param1`,`comment`) VALUES
-(1029904, 10299, 1, 3, 100, 4000, 4000, 1, -9, 5, 1,  'Scarshield Infiltrator - Speech part 1 (Phase 2)'),
-(1029905, 10299, 1, 3, 100, 10000, 10000, 1, -10, 5, 1, 'Scarshield Infiltrator - Speech part 2 (Phase 2)');
+-- Event script
+REPLACE INTO `event_scripts` (`id`,`delay`,`command`,`datalong`,`datalong2`,`dataint`,`comments`) VALUES
+(16037, 0, 28, 0, 0, 0, 'Scarshield Infiltrator - Stand'),
+(16037, 0, 15, 16037, 0, 0, 'Scarshield Infiltrator - Cast Mind Probe'),
+(16037, 2, 35, 0, 0, 0, 'Scarshield Infiltrator - Face player'),
+(16037, 4, 0, 0, 0, 5555, 'Scarshield Infiltrator - Say text 1'),
+(16037, 4, 1, 1, 0, 0, 'Scarshield Infiltrator - Say emote 1'),
+(16037, 10, 0, 0, 0, 5556, 'Scarshield Infiltrator - Say text 2'),
+(16037, 10, 1, 1, 0, 0, 'Scarshield Infiltrator - Say emote 2');
 
 -- End of migration.
 END IF;
