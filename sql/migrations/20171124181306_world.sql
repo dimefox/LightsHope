@@ -8,8 +8,10 @@ IF v=0 THEN
 INSERT INTO `migrations` VALUES ('20171124181306');
 -- Add your query below.
 
--- Disable Vaelan spawn and NPC flags
-UPDATE `creature` SET `spawnFlags`=2 WHERE `guid`=42797;
+
+-- Remove static Vaelan spawn. Scarshield Infiltrator turns into Vaelan.
+DELETE FROM `creature` WHERE `guid`=42797;
+-- Remove npc flags from Vaelan. They are added via his script.
 UPDATE `creature_template` SET `npcflag`=0 WHERE `entry`=10296;
 
 -- Move infiltrator from y=-413.32 to y=-399.5 and kneel
@@ -36,7 +38,46 @@ REPLACE INTO `event_scripts` (`id`,`delay`,`command`,`datalong`,`datalong2`,`dat
 (16037, 4, 1, 1, 0, 0, 'Scarshield Infiltrator - Say emote 1'),
 (16037, 10, 0, 0, 0, 5556, 'Scarshield Infiltrator - Say text 2'),
 (16037, 10, 1, 1, 0, 0, 'Scarshield Infiltrator - Say emote 2'),
-(16037, 10, 29, 3, 1, 0, 'Scarshield Infiltrator - Set gossip flags');
+(16037, 10, 29, 1, 1, 0, 'Scarshield Infiltrator - Set gossip flags');
+
+-- Add gossip menu and script for Vaelan.
+-- He should only offer quests if the player has a Unadorned Seal of Ascension.
+-- http://db.vanillagaming.org/?quest=4742
+-- http://db.vanillagaming.org/?quest=4743
+-- https://web.archive.org/web/20071113030159/http://wow.allakhazam.com:80/db/mob.html?wmob=10296
+-- https://www.youtube.com/watch?v=75ZluW4Ae-g
+UPDATE `creature_template` SET `gossip_menu_id`=12039 WHERE `entry`=10296;
+INSERT INTO `conditions` VALUES (63, 2, 12219, 1);
+INSERT INTO `conditions` VALUES (64, -3, 63, 0);
+INSERT INTO `gossip_menu` VALUES (12039, 3301, 0);
+INSERT INTO `gossip_menu` VALUES (12039, 3311, 63);
+INSERT INTO `gossip_menu` VALUES (12040, 3302, 0);
+INSERT INTO `gossip_menu` VALUES (12041, 3303, 0);
+INSERT INTO `gossip_menu` VALUES (12042, 3304, 0);
+INSERT INTO `gossip_menu` VALUES (12043, 3305, 0);
+INSERT INTO `gossip_menu` VALUES (12044, 3306, 0);
+INSERT INTO `gossip_menu` VALUES (12045, 3307, 0);
+INSERT INTO `gossip_menu` VALUES (12046, 3308, 0);
+INSERT INTO `gossip_menu` VALUES (12047, 3309, 0);
+INSERT INTO `gossip_menu` VALUES (12048, 3310, 0);
+INSERT INTO `gossip_menu_option` (`menu_id`, `id`, `option_icon`, `option_text`, `option_id`, `npc_option_npcflag`, `action_menu_id`, `action_poi_id`, `action_script_id`, `box_coded`, `box_money`, `box_text`, `condition_id`) VALUES (12039, 0, 0, 'Your kind?', 1, 1, 12040, 0, 0, 0, 0, NULL, 64);
+INSERT INTO `gossip_menu_option` (`menu_id`, `id`, `option_icon`, `option_text`, `option_id`, `npc_option_npcflag`, `action_menu_id`, `action_poi_id`, `action_script_id`, `box_coded`, `box_money`, `box_text`, `condition_id`) VALUES (12039, 1, 0, 'As you wish, Vaelan.', 1, 1, -1, 0, 10296, 0, 0, '', 63);
+INSERT INTO `gossip_menu_option` (`menu_id`, `id`, `option_icon`, `option_text`, `option_id`, `npc_option_npcflag`, `action_menu_id`, `action_poi_id`, `action_script_id`, `box_coded`, `box_money`, `box_text`, `condition_id`) VALUES (12040, 0, 0, 'Please.', 1, 1, 12041, 0, 0, 0, 0, NULL, 0);
+INSERT INTO `gossip_menu_option` (`menu_id`, `id`, `option_icon`, `option_text`, `option_id`, `npc_option_npcflag`, `action_menu_id`, `action_poi_id`, `action_script_id`, `box_coded`, `box_money`, `box_text`, `condition_id`) VALUES (12041, 0, 0, 'No, Vaelan, I do not.', 1, 1, 12042, 0, 0, 0, 0, NULL, 0);
+INSERT INTO `gossip_menu_option` (`menu_id`, `id`, `option_icon`, `option_text`, `option_id`, `npc_option_npcflag`, `action_menu_id`, `action_poi_id`, `action_script_id`, `box_coded`, `box_money`, `box_text`, `condition_id`) VALUES (12042, 0, 0, 'Demon Soul?', 1, 1, 12043, 0, 0, 0, 0, NULL, 0);
+INSERT INTO `gossip_menu_option` (`menu_id`, `id`, `option_icon`, `option_text`, `option_id`, `npc_option_npcflag`, `action_menu_id`, `action_poi_id`, `action_script_id`, `box_coded`, `box_money`, `box_text`, `condition_id`) VALUES (12043, 0, 0, 'Where he left off?', 1, 1, 12044, 0, 0, 0, 0, NULL, 0);
+INSERT INTO `gossip_menu_option` (`menu_id`, `id`, `option_icon`, `option_text`, `option_id`, `npc_option_npcflag`, `action_menu_id`, `action_poi_id`, `action_script_id`, `box_coded`, `box_money`, `box_text`, `condition_id`) VALUES (12044, 0, 0, 'Why not destroy them with the combined might of the Aspects?', 1, 1, 12045, 0, 0, 0, 0, NULL, 0);
+INSERT INTO `gossip_menu_option` (`menu_id`, `id`, `option_icon`, `option_text`, `option_id`, `npc_option_npcflag`, `action_menu_id`, `action_poi_id`, `action_script_id`, `box_coded`, `box_money`, `box_text`, `condition_id`) VALUES (12045, 0, 0, 'Unless?', 1, 1, 12046, 0, 0, 0, 0, NULL, 0);
+INSERT INTO `gossip_menu_option` (`menu_id`, `id`, `option_icon`, `option_text`, `option_id`, `npc_option_npcflag`, `action_menu_id`, `action_poi_id`, `action_script_id`, `box_coded`, `box_money`, `box_text`, `condition_id`) VALUES (12046, 0, 0, 'I am willing to try but I will require instruction.', 1, 1, 12047, 0, 0, 0, 0, NULL, 0);
+INSERT INTO `gossip_menu_option` (`menu_id`, `id`, `option_icon`, `option_text`, `option_id`, `npc_option_npcflag`, `action_menu_id`, `action_poi_id`, `action_script_id`, `box_coded`, `box_money`, `box_text`, `condition_id`) VALUES (12047, 0, 0, 'I will do my best, Vaelan.', 1, 1, 12048, 0, 0, 0, 0, NULL, 0);
+INSERT INTO `gossip_menu_option` (`menu_id`, `id`, `option_icon`, `option_text`, `option_id`, `npc_option_npcflag`, `action_menu_id`, `action_poi_id`, `action_script_id`, `box_coded`, `box_money`, `box_text`, `condition_id`) VALUES (12048, 0, 0, 'It will be done.', 1, 1, -1, 0, 0, 0, 0, NULL, 0);
+INSERT INTO `gossip_scripts` (`id`, `delay`, `command`, `datalong`, `datalong2`, `datalong3`, `datalong4`, `data_flags`, `dataint`, `dataint2`, `dataint3`, `dataint4`, `x`, `y`, `z`, `o`, `comments`) VALUES (10296, 0, 29, 1, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Vaelan - Remove Gossip Flag');
+INSERT INTO `gossip_scripts` (`id`, `delay`, `command`, `datalong`, `datalong2`, `datalong3`, `datalong4`, `data_flags`, `dataint`, `dataint2`, `dataint3`, `dataint4`, `x`, `y`, `z`, `o`, `comments`) VALUES (10296, 2, 15, 16051, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Vaelan - Cast Barrier of Light');
+INSERT INTO `gossip_scripts` (`id`, `delay`, `command`, `datalong`, `datalong2`, `datalong3`, `datalong4`, `data_flags`, `dataint`, `dataint2`, `dataint3`, `dataint4`, `x`, `y`, `z`, `o`, `comments`) VALUES (10296, 2, 0, 0, 0, 0, 0, 0, 5590, 0, 0, 0, 0, 0, 0, 0, 'Vaelan - Say Text 1 (emoted)');
+INSERT INTO `gossip_scripts` (`id`, `delay`, `command`, `datalong`, `datalong2`, `datalong3`, `datalong4`, `data_flags`, `dataint`, `dataint2`, `dataint3`, `dataint4`, `x`, `y`, `z`, `o`, `comments`) VALUES (10296, 6, 0, 0, 0, 0, 0, 0, 5591, 0, 0, 0, 0, 0, 0, 0, 'Vaelan - Say Text 2');
+INSERT INTO `gossip_scripts` (`id`, `delay`, `command`, `datalong`, `datalong2`, `datalong3`, `datalong4`, `data_flags`, `dataint`, `dataint2`, `dataint3`, `dataint4`, `x`, `y`, `z`, `o`, `comments`) VALUES (10296, 6, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Vaelan - Emote Talk');
+INSERT INTO `gossip_scripts` (`id`, `delay`, `command`, `datalong`, `datalong2`, `datalong3`, `datalong4`, `data_flags`, `dataint`, `dataint2`, `dataint3`, `dataint4`, `x`, `y`, `z`, `o`, `comments`) VALUES (10296, 10, 29, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Vaelan - Add Questgiver Flag');
+
 
 -- End of migration.
 END IF;
